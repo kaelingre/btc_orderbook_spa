@@ -208,7 +208,7 @@ function addTrade(trade) {
         <td class="time-col">${h}:${m}:${s}</td>
         <td class="price-cell"><span>${formatPrice(+trade.p)}</span></td>
         <td class="amount-col whale-qty" style="font-weight:600">${Number(trade.q).toFixed(5)}</td>
-        <td class="total-cell">$${formatTradeTotal(+trade.p, +trade.q)}</td>`;
+        <td class="total-cell">${formatTradeTotal(+trade.p, +trade.q)}</td>`;
 
     // Whale trade → pop out into overlay (held 10s)
     if (+trade.q >= WHALE_THRESHOLD) showWhale(trade);
@@ -233,7 +233,7 @@ function showWhale(trade) {
     whaleTime.textContent   = d.toUTCString().slice(-12, -4);
     whalePrice.textContent  = formatPrice(+trade.p);
     whaleAmount.textContent = `${Number(trade.q).toFixed(5)} BTC`;
-    whaleTotal.textContent  = `$${formatTradeTotal(+trade.p, +trade.q)}`;
+    whaleTotal.textContent  = formatTradeTotal(+trade.p, +trade.q);
 
     // Force reflow so CSS animation restarts on every new whale
     whaleRow.classList.remove("fade-in", "fading-out");
@@ -578,18 +578,14 @@ function renderSide(levels, element, cssClass) {
         sorted.sort((a, b) => b[0] - a[0]);
     }
 
-    // Single-pass: find max depth, compute cumulative total, build rows
+    // Single-pass: find max depth, compute per-row notional USD, build rows
     const maxDepth            = Math.max(...sorted.map(l => l[1]));
-    let runningTotal          = 0;
-    let cumulativeUsdt        = 0;
 
     element.innerHTML         = "";   // clear old content
 
     for (const [price, amount] of sorted) {
-        runningTotal       += amount;
-        cumulativeUsdt    += price * amount;
-
         const depthWidth    = (amount / maxDepth) * 100;   // % of max on this side
+        const notional      = price * amount;              // BTC×price for this row
 
         const row           = document.createElement("tr");
         row.className       = cssClass;
@@ -599,7 +595,7 @@ function renderSide(levels, element, cssClass) {
                 ${formatPrice(price)}
             </td>
             <td class="amount-cell">${amount.toFixed(5)}</td>
-            <td class="total-cell">${formatTotal(cumulativeUsdt)}</td>`;
+            <td class="total-cell">${formatTotal(notional)}</td>`;
 
         element.appendChild(row);
     }
