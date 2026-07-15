@@ -228,8 +228,6 @@ td.amount-cell, td.total-cell { color: #c9ccd4; }
 
 .price-change { font-size: 15px; font-weight: 600; font-family: "SF Mono", monospace; }
 .price-divider { color: rgba(255,255,255,0.12); font-size: 13px; user-select: none; }
-.price-hl      { font-size: 13px; color: #c9ccd4; font-family: "SF Mono", monospace; }
-
 /* Imbalance bar */
 .imbalance-box {
     flex: 1;
@@ -381,7 +379,6 @@ td.amount-cell, td.total-cell { color: #c9ccd4; }
     background: rgba(255,255,255,0.2);
 }
 
-.whale-col { flex: 0 0 auto; text-align: center; }
 .whale-time { color: rgba(255,255,255,0.6); font-size: 11px; white-space: nowrap; }
 .whale-price, .whale-total, .whale-amount { font-weight: 600; }
 
@@ -430,8 +427,6 @@ td.amount-cell, td.total-cell { color: #c9ccd4; }
 .time-select:hover { background: rgba(255,255,255,0.1); }
 .time-select:focus { outline: none; border-color: rgba(255,255,255,0.2); }
 
-.chart-label-asks { color: #ff6b6b; }
-.chart-label-bids { color: #2ed573; margin-left: 4px; }
 
 #chart {
     display: block;
@@ -473,7 +468,7 @@ td.amount-cell, td.total-cell { color: #c9ccd4; }
         border-radius: 6px;
         cursor: pointer;
     }
-    .details-btn:active { background: rgba(255,255,255,0.12); }
+    .details-btn:hover { background: rgba(255,255,255,0.12); }
 
     /* Imbalance bar — stack, shrink */
     .imbalance-box     { padding: 14px 16px 12px; }
