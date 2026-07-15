@@ -484,8 +484,9 @@ td.amount-cell, td.total-cell { color: #c9ccd4; }
     .whale-overlay     { top: 44px; left: 8px; right: 8px; }
     .whale-row         { font-size: 10px; padding: 6px 10px; gap: 8px; }
 
-    /* Chart */
+    /* Chart — tighter x-axis labels */
     #chart             { height: 240px; }
+    .time-select       { font-size: 11px; padding: 2px 4px; }
 }
 
 /* ── Hide Details button on desktop (always) ──────────── */

@@ -23,11 +23,10 @@ const whaleOverlay = document.getElementById("whaleOverlay");
 
 // ── Config constants ───────────────────────────────────────
 const SAMPLE_INTERVAL_MS     = 1_000;         // chart sample rate (ms)
-const CHART_WINDOW_SECONDS   = { seconds: 600, minutes: 1800 }; // ≤10min → seconds, ≥30min → HH:MM
 const X_AXIS_TARGET_LABELS   = [10, 6];       // [seconds-mode, minutes-mode] target label count
 
 // ── State ──────────────────────────────────────────────────
-let CHART_WINDOW_S            = CHART_WINDOW_SECONDS.minutes; // default window (seconds)
+let CHART_WINDOW_S            = 300;          // default window in seconds (matches HTML <option selected>)
 let CHART_MIN                 = 0;          // running price-axis minimum
 let CHART_MAX                 = 1;          // running price-axis maximum
 
@@ -354,8 +353,8 @@ function drawChart() {
     // --- Grid lines & Y-axis labels ---
     drawYGrid(y, pr, W, H);
 
-    // --- X-axis labels (time) ---
-    drawXAxis(timeRange, x, W, H);
+    // --- X-axis labels (time) -- adaptive format & spacing for mobile ---
+    drawXAxis(timeRange, x, plotW, W, H);
 
     // --- Data layers: area → line → legend ---
     drawAreaFill(historyA, "rgb(255,107,107)", x, y, rect.height);
@@ -390,14 +389,20 @@ function drawYGrid(yFn, range, canvasW, canvasH) {
     }
 }
 
-/** Draw X-axis time labels using a "nice" interval based on the chosen window. */
-function drawXAxis(timeRange, xFn, canvasW, canvasH) {
+/** Draw X-axis time labels, adapting format & spacing for mobile narrow screens. */
+function drawXAxis(timeRange, xFn, plotW, canvasW, canvasH) {
     const spanMs              = timeRange[1] - timeRange[0];
 
-    // Seconds for ≤10min windows; HH:MM only for ≥30min (avoids label collisions).
-    const useSecond           = CHART_WINDOW_S <= CHART_WINDOW_SECONDS.seconds;
+    // Use seconds (HH:MM:SS) for small windows; HH:MM only for >=30min windows.
+    let useSecond             = CHART_WINDOW_S <= 600;
 
-    // Pick a "nice" interval (5s, 10s, 30s … or 5m, 10m, 15m, 30m) that gives ~6-8 labels.
+    // On narrow screens in seconds-mode, switch to HH:MM with wider spacing
+    // to avoid label crowding (typical ~72px font width at 11px / ~58px at 9px).
+    if (useSecond && plotW < 420) {
+        useSecond             = false;
+    }
+
+    // Pick a "nice" interval that gives enough labels for the available space.
     const targetInterval      = spanMs / X_AXIS_TARGET_LABELS[useSecond ? 0 : 1];
     const iterStep            = niceNumberStep(targetInterval);
 
