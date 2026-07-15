@@ -442,10 +442,6 @@ td.amount-cell, td.total-cell { color: #c9ccd4; }
 /* ── Responsive (mobile ≤640px) ───────────────────────── */
 @media (max-width: 640px) {
 
-    /* Hide total columns on small screens */
-    table th.no-total,
-    table td.no-total   { display: none !important; }
-
     /* Order book — stack sides */
     .orderbook { flex-direction: column; }
     .side h2   { padding: 14px 16px 8px !important; }

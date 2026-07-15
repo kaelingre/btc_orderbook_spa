@@ -490,14 +490,13 @@ function renderSide(levels, element, cssClass) {
 
         const row = document.createElement("tr");
         row.className = cssClass;
-        // On mobile (≤640px), hide the total column to gain space
         row.innerHTML = `
             <td class="price-cell">
                 <span class="depth-bar" style="width:${widthPct}%"></span>
                 ${formatPrice(price)}
             </td>
             <td class="amount-cell">${amount.toFixed(5)}</td>
-            <td class="${isMobile ? 'total-cell no-total' : 'total-cell'}">${formatTotal(cumulativeUsdt)}</td>
+            <td class="total-cell">${formatTotal(cumulativeUsdt)}</td>
         `;
 
         element.appendChild(row);
