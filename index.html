@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BTC / USDT — Order Book</title>
+    <title>BTC / USDT — Live Order Book & Price Chart (Binance)</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='12' fill='%23f7931a'/><text x='32' y='48' font-size='44' font-family='monospace' font-weight='bold' text-anchor='middle' fill='white'>B</text></svg>">
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -13,15 +14,16 @@
     <header>
         <div class="logo">
             <span class="logo-btc">₿</span>
-            <h1>BTC / USDT</h1>
+            <h1>BTC / USDT — Binance Order Book</h1>
         </div>
+        <a href="https://www.binance.com/en/trade/BTC_USDT" target="_blank" rel="noopener" class="link-badge" id="binanceLink">Visit Binance ↗</a>
         <div id="status" class="status disconnected">Connecting…</div>
     </header>
 
     <div class="orderbook">
 
         <div class="side asks-side">
-            <h2><span class="dot ask-dot"></span>Sell Orders (Asks)</h2>
+            <h2><span class="dot ask-dot"></span>Sell Orders</h2>
             <table>
                 <thead>
                     <tr>

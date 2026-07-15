@@ -66,6 +66,22 @@ h1 {
     color: #ff6b6b;
 }
 
+/* ── Binance link badge ──────────────────────────────── */
+.link-badge {
+    font-size: 13px;
+    padding: 5px 14px;
+    border-radius: 99px;
+    font-weight: 500;
+    color: #f7931a;
+    background: rgba(247, 147, 26, 0.1);
+    border: 1px solid rgba(247, 147, 26, 0.2);
+    text-decoration: none;
+    letter-spacing: 0.3px;
+}
+.link-badge:hover {
+    background: rgba(247, 147, 26, 0.18);
+}
+
 /* ── Order book layout ────────────────────────────────── */
 .orderbook {
     display: flex;

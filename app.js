@@ -47,57 +47,106 @@ const chartCanvas             = document.getElementById("chart");
 const ctx                     = chartCanvas.getContext("2d");
 
 // ══════════════════════════════════════════════════════════
-// WebSocket connections
+// WebSocket connections (with auto-reconnect)
 // ══════════════════════════════════════════════════════════
 
-// Socket 1: order-book depth (20 levels, 100ms updates)
-const depthSocket             = new WebSocket(
-    "wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms"
-);
+let depthConnected            = false;      // per-channel tracking for status badge
+let secondaryConnected        = false;
+let reconnectTimerDepth       = null;       // track pending reconnects so we don't stack
+let reconnectTimerSecondary   = null;
 
-depthSocket.onopen            = () => setStatus("connected", "Live");
-depthSocket.onerror           = (err) => console.error("Depth socket error:", err);
-
-depthSocket.onmessage         = (event) => {
-    const data                = JSON.parse(event.data);
-    renderSide(data.asks, asksEl, "ask");
-    renderSide(data.bids, bidsEl, "bid");
-    updateImbalance(data.asks, data.bids);
-
-    // One chart sample per second (throttle the high-rate stream)
-    const now                 = Date.now();
-    if (now - lastSampleTime >= SAMPLE_INTERVAL_MS) {
-        pushSample(data.asks, data.bids);
-        lastSampleTime        = now;
+/** Update the status badge based on individual channel health. */
+function updateStatus() {
+    if (!depthConnected && !secondaryConnected) {
+        statusEl.className   = "status disconnected";
+        statusEl.textContent = "Disconnected";
+    } else if (depthConnected && secondaryConnected) {
+        statusEl.className   = "status connected";
+        statusEl.textContent = "Depth ✓  Trades ✓";
+    } else {
+        // Partial — show which channel is down
+        const cls               = "connected";
+        const pieces            = [];
+        if (depthConnected)   pieces.push("Depth");
+        if (secondaryConnected) pieces.push("Trades");
+        statusEl.className     = cls;
+        statusEl.textContent   = `${pieces.join(", ")} … reconnecting`;
     }
-};
+}
 
-// Socket 2: ticker + trades (combined stream → fewer connections)
-const secondarySocket         = new WebSocket(
-    "wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/btcusdt@trade"
-);
+function connectDepth() {
+    const socket                = new WebSocket(
+        "wss://stream.binance.com:9443/ws/btcusdt@depth20@100ms"
+    );
 
-secondarySocket.onopen        = () => setStatus("connected", "Live");
-secondarySocket.onerror       = (err) => console.error("Secondary socket error:", err);
+    socket.onopen               = () => {
+        depthConnected          = true;
+        updateStatus();         // combined status reflects current state of all channels
+    };
+    socket.onerror              = (err) => console.error("Depth socket error:", err);
+    // Binance auto-reconnects before firing onclose — only schedule a reconnect if it's
+    // a "real" close (no willReconnect flag). This avoids timer races.
+    socket.onclose              = (event) => {
+        depthConnected          = false;
+        updateStatus();
 
-secondarySocket.onclose       = (event) => {
-    // Only show disconnected when BOTH sockets are down
-    if (depthSocket.readyState !== WebSocket.OPEN) {
-        setStatus("disconnected", "Disconnected");
-    }
-};
+        if (!event.willReconnect) {
+            // Reconnect with 5s delay (no stacking — clear any pending timer)
+            if (reconnectTimerDepth) clearTimeout(reconnectTimerDepth);
+            reconnectTimerDepth     = setTimeout(connectDepth, 5_000);
+        }
+    };
+    socket.onmessage            = (event) => {
+        const data              = JSON.parse(event.data);
+        renderSide(data.asks, asksEl, "ask");
+        renderSide(data.bids, bidsEl, "bid");
+        updateImbalance(data.asks, data.bids);
 
-secondarySocket.onmessage     = (event) => {
-    const wrapper             = JSON.parse(event.data);
-    const stream              = wrapper.stream;
-    const data                = wrapper.data;
-    if (!data) return;      // skip malformed messages
+        // One chart sample per second (throttle the high-rate stream)
+        const now             = Date.now();
+        if (now - lastSampleTime >= SAMPLE_INTERVAL_MS) {
+            pushSample(data.asks, data.bids);
+            lastSampleTime  = now;
+        }
+    };
 
-    if (stream === "btcusdt@ticker") updateTicker(data);
-    if (stream === "btcusdt@trade")  addTrade(data);
-};
+    return socket;              // returned so we can check readyState
+}
 
-// ── Status badge helper ────────────────────────────────────
+function connectSecondary() {
+    const socket                = new WebSocket(
+        "wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/btcusdt@trade"
+    );
+
+    socket.onopen               = () => {
+        secondaryConnected      = true;
+        updateStatus();         // combined status reflects current state of all channels
+    };
+    socket.onerror              = (err) => console.error("Secondary socket error:", err);
+    socket.onclose              = (event) => {
+        secondaryConnected      = false;
+        updateStatus();
+
+        if (reconnectTimerSecondary) clearTimeout(reconnectTimerSecondary);
+        reconnectTimerSecondary = setTimeout(connectSecondary, 5_000);
+    };
+    socket.onmessage            = (event) => {
+        const wrapper         = JSON.parse(event.data);
+        const stream          = wrapper.stream;
+        const data            = wrapper.data;
+        if (!data) return;      // skip malformed messages
+
+        if (stream === "btcusdt@ticker") updateTicker(data);
+        if (stream === "btcusdt@trade")  addTrade(data);
+    };
+
+    return socket;
+}
+
+// ── Status badge helper (per-channel aware) ────────────────
+let depthSocket       = connectDepth();
+let secondarySocket   = connectSecondary();
+
 function setStatus(className, text) {
     statusEl.className   = `status ${className}`;
     statusEl.textContent = text;
@@ -116,14 +165,12 @@ function updateTicker(ticker) {
 
     if (isNaN(current)) return;
 
-    tickerState._prev         = tickerState.lastPrice;
-    tickerState.lastPrice     = current;
-    tickerState.high24h       = high;
-    tickerState.low24h        = low;
-    tickerState.pctChange     = changePct;
+    // Direction: green if price rose, red if fell (first tick → neutral/no flash)
+    const isInitialTick         = tickerState._prev === undefined;
+    tickerState._prev           = isInitialTick ? current : tickerState._prev;
+    tickerState.lastPrice       = current;
 
-    // Direction: green if price rose, red if fell (first tick defaults to up)
-    const dir                 = current >= tickerState._prev;
+    const dir                   = isInitialTick || current >= tickerState._prev;
     currentPrice.className    = `price-current ${dir ? "up" : "down"}`;
     priceChange.style.color   = dir ? "#2ed573" : "#ff6b6b";
 
@@ -151,14 +198,14 @@ function addTrade(trade) {
     trEl.className          = isBuy ? "bid" : "ask";
 
     // Format timestamp from Binance trade.T (epoch ms)
+    // Note: Binance timestamps are second-precision, so milliseconds are always "000"
     const d                 = new Date(trade.T);
     const h                 = String(d.getHours()).padStart(2, "0");
     const m                 = String(d.getMinutes()).padStart(2, "0");
     const s                 = String(d.getSeconds()).padStart(2, "0");
-    const ms                = String(d.getMilliseconds()).padStart(3, "0");
 
     trEl.innerHTML          = `
-        <td class="time-col">${h}:${m}:${s}.${ms}</td>
+        <td class="time-col">${h}:${m}:${s}</td>
         <td class="price-cell"><span>${formatPrice(+trade.p)}</span></td>
         <td class="amount-col whale-qty" style="font-weight:600">${Number(trade.q).toFixed(5)}</td>
         <td class="total-cell">$${formatTradeTotal(+trade.p, +trade.q)}</td>`;
@@ -209,6 +256,9 @@ function showWhale(trade) {
 // ══════════════════════════════════════════════════════════
 
 function updateImbalance(asks, bids) {
+    // Guard against empty side — imbalance can't be computed
+    if (!asks || !asks.length || !bids || !bids.length) return;
+
     let sellVol           = 0, buyVol           = 0;
     for (const [p, q] of asks) sellVol += +p * +q;
     for (const [p, q] of bids) buyVol   += +p * +q;
@@ -382,6 +432,7 @@ function drawYGrid(yFn, range, canvasW, canvasH) {
         ctx.lineTo(canvasW - CHART_PAD.right, yy);
         ctx.stroke();
 
+        // Grid-line labels are "nice" reference values (rounded to nearest $) — not exact prices.
         ctx.fillText(
             `$${v.toLocaleString("en-US", { maximumFractionDigits: 0 })}`,
             CHART_PAD.left - 8, yy
@@ -515,6 +566,9 @@ function drawLegend(legendX, ly) {
 
 /** Render one side of the order book with depth bar and cumulative total. */
 function renderSide(levels, element, cssClass) {
+    // Guard against empty side (can happen during init or temporary no-orders)
+    if (!levels || !levels.length) return;
+
     // Normalise to [price, qty] number arrays
     const sorted            = levels.map(l => [Number(l[0]), Number(l[1])]);
     // asks: ascending price (lowest sell first); bids: descending price (highest buy first)
@@ -573,21 +627,32 @@ function formatTradeTotal(price, qty) {
 // Event listeners (non-critical UI features)
 // ══════════════════════════════════════════════════════════
 
-// Chart redraw on resize
-window.addEventListener("resize", drawChart);
+// ── Chart redraw on resize (debounced via rAF — no double-draws) ──
+let resizeRaf                 = null;
+window.addEventListener("resize", () => {
+    if (resizeRaf) cancelAnimationFrame(resizeRaf);
+    resizeRaf                   = requestAnimationFrame(drawChart);
+});
 
-// Time-window selector (change visible range)
-const timeWindowEl                = document.getElementById("time-window");
+// ── Time-window selector with localStorage persistence ──
+const timeWindowEl            = document.getElementById("time-window");
+const saved                 = localStorage.getItem("chartWindow");
+if (saved) {
+    CHART_WINDOW_S          = Number(saved);        // restore last-used window
+    timeWindowEl.value      = saved;                // sync <select> to match
+}
+
 timeWindowEl.addEventListener("change", (e) => {
-    const newWindow               = Number(e.target.value);
+    const newWindow           = Number(e.target.value);
     evictOldData(newWindow * 1000);
-    CHART_WINDOW_S              = newWindow;
+    CHART_WINDOW_S          = newWindow;
+    localStorage.setItem("chartWindow", String(newWindow));
     drawChart();
 });
 
-// Mobile "Details" toggle (show/hide high & low price metrics)
-const detailsBtn                  = document.getElementById("detailsBtn");
-const priceBoxEl                  = document.getElementById("priceBox");
+// ── Mobile "Details" toggle (show/hide high & low price metrics) ──
+const detailsBtn              = document.getElementById("detailsBtn");
+const priceBoxEl              = document.getElementById("priceBox");
 if (detailsBtn && priceBoxEl) {
     detailsBtn.addEventListener("click", () => {
         priceBoxEl.classList.toggle("expanded");
