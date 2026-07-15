@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BTC / USDT — Order Book</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+<div class="container">
+
+    <header>
+        <div class="logo">
+            <span class="logo-btc">₿</span>
+            <h1>BTC / USDT</h1>
+        </div>
+        <div id="status" class="status disconnected">Connecting…</div>
+    </header>
+
+    <div class="orderbook">
+
+        <div class="side asks-side">
+            <h2><span class="dot ask-dot"></span>Sell Orders (Asks)</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="price-col">Price</th>
+                        <th class="amount-col">Amount (BTC)</th>
+                        <th class="total-col no-total">Total (USDT)</th>
+                    </tr>
+                </thead>
+                <tbody id="asks"></tbody>
+            </table>
+        </div>
+
+        <div class="side bids-side">
+            <h2><span class="dot bid-dot"></span>Buy Orders</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="price-col">Price</th>
+                        <th class="amount-col">Amount (BTC)</th>
+                        <th class="total-col no-total">Total (USDT)</th>
+                    </tr>
+                </thead>
+                <tbody id="bids"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <!-- Info box + imbalance bar -->
+    <div class="price-strip">
+        <div class="price-box" id="priceBox">
+            <span class="box-title">Current Price</span>
+            <span class="price-current" id="currentPrice">$--,---</span>
+            <div class="price-meta">
+                <span class="price-change" id="priceChange">--%</span>
+                <!-- High / Low hidden on mobile — revealed via "Details" -->
+                <span class="price-details" id="priceHigh">24h High: --</span>
+                <span class="price-divider">&nbsp;|&nbsp;</span>
+                <span class="price-details" id="priceLow">24h Low: --</span>
+            </div>
+            <!-- Mobile-only toggle for high/low (visible only ≤640px) -->
+            <button class="details-btn" id="detailsBtn">Details</button>
+        </div>
+        <div class="imbalance-box">
+            <span class="box-title squeeze">Order Book Imbalance</span>
+            <p class="imbalance-subtitle">Top 20 levels · depth by USD value</p>
+            <div class="imbalance-bar-wrap">
+                <span class="imbalance-label sell-label">Sell</span>
+                <div class="imbalance-bar-track">
+                    <div class="imbalance-bar-fill" id="imbalanceFill"></div>
+                </div>
+                <span class="imbalance-label buy-label">Buy</span>
+            </div>
+            <div class="imbalance-pct-wrap"><span class="imbalance-pct" id="imbalancePct">50.0%</span></div>
+        </div>
+    </div>
+
+    <!-- Recent trades panel -->
+    <div class="trades-panel">
+        <div class="trades-header">
+            <h2 class="panel-heading">Recent Trades</h2>
+            <span class="box-title squeeze">Last 30 executed trades from Binance</span>
+        </div>
+        <div class="trades-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="time-col">Time (UTC)</th>
+                        <th class="price-col">Trade Price</th>
+                        <th class="amount-col">Size (BTC)</th>
+                        <th class="total-col no-total">Total (USDT)</th>
+                    </tr>
+                </thead>
+                <tbody id="trades"></tbody>
+            </table>
+        </div>
+        <div class="whale-overlay" id="whaleOverlay">
+            <div class="whale-row fade-in" id="whaleRow">
+                <span class="whale-label" id="whaleLabel">WHALE</span>
+                <span class="whale-side-indicator" id="whaleSide"></span>
+                <span class="whale-time" id="whaleTime"></span>
+                <span class="whale-price" id="whalePrice"></span>
+                <span class="whale-amount" id="whaleAmount"></span>
+                <span class="whale-total" id="whaleTotal"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="chart-panel">
+        <div class="chart-header">
+            <h2 class="panel-heading">Average Price</h2>
+            <span class="box-title squeeze">Quantity-weighted avg of top 20 levels — updated every second</span>
+            <select id="time-window" class="time-select">
+                <option value="30">30s</option>
+                <option value="60">1min</option>
+                <option value="300" selected>5min</option>
+                <option value="600">10min</option>
+                <option value="1800">30min</option>
+                <option value="3600">1h</option>
+            </select>
+        </div>
+        <canvas id="chart"></canvas>
+    </div>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

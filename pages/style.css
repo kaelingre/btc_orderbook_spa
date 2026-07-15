@@ -1,0 +1,501 @@
+/* ── Reset & base ─────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #0a0e17;
+    color: #e1e4ea;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Container ────────────────────────────────────────── */
+.container { max-width: 860px; width: 100%; }
+
+/* ── Header ───────────────────────────────────────────── */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 8px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.logo-btc {
+    font-size: 36px;
+    color: #f7931a;
+    line-height: 1;
+    font-weight: 700;
+    background: linear-gradient(135deg, #f7931a, #ffb347);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+h1 {
+    font-size: 26px;
+    font-weight: 600;
+    color: #e1e4ea;
+    letter-spacing: -0.5px;
+}
+
+/* ── Status badge ─────────────────────────────────────── */
+.status {
+    font-size: 13px;
+    padding: 5px 14px;
+    border-radius: 99px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+.status.connected {
+    background: rgba(46, 213, 115, 0.12);
+    color: #2ed573;
+}
+
+.status.disconnected {
+    background: rgba(255, 107, 107, 0.12);
+    color: #ff6b6b;
+}
+
+/* ── Order book layout ────────────────────────────────── */
+.orderbook {
+    display: flex;
+    gap: 16px;
+}
+
+.side {
+    flex: 1;
+    background: #111927;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.side h2 {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 18px 20px 12px;
+    margin: 0;
+}
+
+.asks-side h2 { color: #ff6b6b; }
+.bids-side h2 { color: #2ed573; }
+
+.dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.ask-dot { background: #ff6b6b; box-shadow: 0 0 8px rgba(255,107,107,0.5); }
+.bid-dot { background: #2ed573; box-shadow: 0 0 8px rgba(46,213,115,0.5); }
+
+/* ── Table ────────────────────────────────────────────── */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+thead th {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #6b7080;
+    padding: 10px 20px 12px;
+    text-align: right;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+thead th:first-child { text-align: left; }
+
+tbody tr {
+    transition: background 0.15s ease;
+    cursor: default;
+}
+
+tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+td {
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    font-size: 13px;
+    padding: 7px 20px;
+    text-align: right;
+    position: relative;
+}
+
+td:first-child { text-align: left; }
+
+/* ── Depth bar inside price cell ──────────────────────── */
+.price-cell { position: relative; overflow: hidden; }
+
+.depth-bar {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 0;
+    opacity: 0.07;
+    pointer-events: none;
+    transition: width 150ms ease;
+}
+
+.asks-side .depth-bar { background: #ff6b6b; }
+.bids-side .depth-bar { background: #2ed573; }
+
+/* ── Price / amount styling ───────────────────────────── */
+td.price-cell span {
+    position: relative;
+    z-index: 1;
+}
+
+.asks-side td.price-cell span { color: #ff6b6b; font-weight: 500; }
+.bids-side td.price-cell span { color: #2ed573; font-weight: 500; }
+
+td.amount-cell, td.total-cell { color: #c9ccd4; }
+
+/* ── Box titles & subtitles ─────────────────────────────── */
+.box-title {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #6b7080;
+    margin-bottom: 4px;
+}
+
+.imbalance-subtitle {
+    display: block;
+    font-size: 11px;
+    color: #6b7080;
+    margin-bottom: 2px;
+}
+
+/* ── Box-title inline variant ─────────────────────────── */
+.squeeze {
+    display: inline;
+    margin-bottom: 0;
+}
+
+/* ── Price strip (info box + imbalance) ─────────────── */
+.price-strip {
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    margin-top: 16px;
+}
+
+.price-box {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 20px 32px 16px;
+    background: #111927;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+    min-width: 260px;
+}
+
+.price-current {
+    display: block;
+    font-size: 36px;
+    font-weight: 700;
+    font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+    color: #e1e4ea;
+    letter-spacing: -1px;
+}
+
+.price-current.up   { color: #2ed573; }
+.price-current.down { color: #ff6b6b; }
+
+.price-meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.price-change { font-size: 15px; font-weight: 600; font-family: "SF Mono", monospace; }
+.price-divider { color: rgba(255,255,255,0.12); font-size: 13px; user-select: none; }
+.price-hl      { font-size: 13px; color: #c9ccd4; font-family: "SF Mono", monospace; }
+
+/* Imbalance bar */
+.imbalance-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 18px 20px 16px;
+    background: #111927;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.imbalance-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.imbalance-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: #6b7080; white-space: nowrap; }
+.buy-label       { color: #2ed573 !important; }
+.sell-label      { color: #ff6b6b !important; }
+
+.imbalance-bar-track {
+    flex: 1;
+    height: 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 99px;
+    overflow: visible;
+    position: relative;      /* so the dot can be absolutely positioned */
+}
+
+.imbalance-bar-fill {
+    height: 14px;
+    width: 10px;
+    border-radius: 50%;
+    background: #ffa502;
+    position: absolute;
+    left: var(--pos, 50%);   /* 0% = Sell side (left), 100% = Buy side (right) */
+    top: 50%;
+    margin-top: -7px;        /* half of height to center vertically */
+    margin-left: -5px;       /* half of width to center horizontally */
+    box-shadow: 0 0 8px rgba(255,165,2,0.5);
+    transition: left 300ms ease, background 300ms ease;
+}
+
+.imbalance-pct-wrap {
+    text-align: center;
+    margin-top: 6px;
+}
+
+.imbalance-pct {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: "SF Mono", monospace;
+    color: #ffa502;
+    white-space: nowrap;
+}
+
+/* ── Recent trades panel ────────────────────────────────── */
+.trades-panel {
+    position: relative;
+    margin-top: 16px;
+    background: #111927;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.panel-heading {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 18px 20px 4px;
+    margin: 0;
+}
+
+.trades-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-left: 20px;
+}
+
+.trades-panel table { width: 100%; border-collapse: collapse; }
+
+/* Trades-panel column overrides — scoped selectors avoid leaking globally */
+.trades-panel .time-col   { font-size: 11px; color: #6b7080; padding-left: 20px !important; }
+.trades-panel .amount-col { cursor: default; }
+.trades-panel .total-col  { color: #6b7080; }
+
+/* Trades panel first column alignment */
+.trades-panel td:first-child,
+.trades-panel thead th:first-child { text-align: left; }
+
+.trades-panel tbody tr { cursor: default; }
+.trades-panel tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+/* Color-code trade rows */
+.trades-panel .ask td.price-cell span { color: #ff6b6b; font-weight: 500; }
+.trades-panel .bid td.price-cell span { color: #2ed573; font-weight: 500; }
+
+/* ── Whale overlay ─────────────────────────────────────── */
+.whale-overlay {
+    position: absolute;
+    top: 48px;   /* just below .trades-header */
+    left: 16px;
+    right: 16px;
+    pointer-events: none;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 300ms ease;
+}
+
+.whale-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 16px;
+    background: linear-gradient(135deg, #f7931a 0%, #e8850f 100%);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 12px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    box-shadow: 0 4px 20px rgba(247, 147, 26, 0.35);
+    gap: 12px;
+}
+
+.whale-row.fade-in { animation: whale-fade-in 300ms ease-out both; }
+.whale-row.fading-out { animation: whale-fade-out 1500ms ease-in both; }
+
+@keyframes whale-fade-in {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes whale-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+.whale-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.2);
+}
+
+.whale-col { flex: 0 0 auto; text-align: center; }
+.whale-time { color: rgba(255,255,255,0.6); font-size: 11px; white-space: nowrap; }
+.whale-price, .whale-total, .whale-amount { font-weight: 600; }
+
+/* Scrollable trades area */
+.trades-scroll {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+/* Custom scrollbar for trades */
+.trades-scroll::-webkit-scrollbar { width: 6px; }
+.trades-scroll::-webkit-scrollbar-track { background: transparent; }
+.trades-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+.trades-scroll::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* ── Chart panel ──────────────────────────────────────── */
+.chart-panel {
+    margin-top: 16px;
+    background: #111927;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* ── Chart header ─────────────────────────────────────── */
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding-left: 20px;
+    flex-wrap: wrap;
+}
+
+.time-select {
+    background: rgba(255,255,255,0.06);
+    color: #c9ccd4;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 3px 6px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.time-select:hover { background: rgba(255,255,255,0.1); }
+.time-select:focus { outline: none; border-color: rgba(255,255,255,0.2); }
+
+.chart-label-asks { color: #ff6b6b; }
+.chart-label-bids { color: #2ed573; margin-left: 4px; }
+
+#chart {
+    display: block;
+    width: 100%;
+    height: 320px;
+}
+
+/* ── Responsive (mobile ≤640px) ───────────────────────── */
+@media (max-width: 640px) {
+
+    /* Hide total columns on small screens */
+    table th.no-total,
+    table td.no-total   { display: none !important; }
+
+    /* Order book — stack sides */
+    .orderbook { flex-direction: column; }
+    .side h2   { padding: 14px 16px 8px !important; }
+
+    /* Tighter table cells */
+    td, thead th      { padding-left: 10px !important; padding-right: 10px !important; font-size: 12px; }
+
+    /* Price box — shrink price & show Details button */
+    .price-strip       { flex-direction: column; align-items: stretch; }
+    .price-box         { min-width: auto; text-align: center; padding: 16px 16px 12px; }
+    .price-current     { font-size: 30px; letter-spacing: -0.5px; }
+
+    /* Price details hidden until user taps "Details" */
+    .price-details      { display: none; }
+    .price-box.expanded .price-details { display: inline; }
+    .price-box.expanded .price-divider  { display: inline; }
+
+    /* Details toggle button (visible on mobile via @media) */
+    .details-btn {
+        display: block;
+        margin-top: 8px;
+        padding: 6px 16px;
+        font-size: 12px;
+        font-family: inherit;
+        font-weight: 500;
+        color: #c9ccd4;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 6px;
+        cursor: pointer;
+    }
+    .details-btn:active { background: rgba(255,255,255,0.12); }
+
+    /* Imbalance bar — stack, shrink */
+    .imbalance-box     { padding: 14px 16px 12px; }
+    .imbalance-subtitle  { font-size: 10px; margin-bottom: 1px; }
+    .imbalance-pct       { font-size: 13px; }
+
+    /* Trades panel — tighter */
+    .trades-scroll     { max-height: 280px; }
+    .trades-header,
+    .chart-header      { flex-direction: column; align-items: flex-start; gap: 2px !important; padding-left: 16px; }
+
+    /* Whale overlay — tighter for mobile */
+    .whale-overlay     { top: 44px; left: 8px; right: 8px; }
+    .whale-row         { font-size: 10px; padding: 6px 10px; gap: 8px; }
+
+    /* Chart */
+    #chart             { height: 240px; }
+}
+
+/* ── Hide Details button on desktop (always) ──────────── */
+.details-btn { display: none; }
